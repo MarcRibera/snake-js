@@ -1,10 +1,15 @@
-const audioElement = new Audio('success_sound.mp3');
+const audioSuccess = new Audio('success_sound.mp3');
 const audioSong = new Audio('8_bit_song.mp3');
+audioSong.volume = 0.3;
+audioSong.loop = true;
 
 const board = document.getElementById('game-board');
 const scoreText = document.getElementById('score');
 
 const splashScreen = document.getElementById('splash-screen');
+const pausedSplashScreen = document.getElementById('pause-splash-screen');
+
+pausedSplashScreen.style.display = 'none';
 
 const gridSize = 20;
 
@@ -16,6 +21,7 @@ let gameSpeedDealy = 210;
 let gameStarted = false;
 let score = 0;
 
+// create & draw HTML elements
 function draw() {
   board.innerHTML = '';
   drawSnake();
@@ -25,39 +31,35 @@ function draw() {
 function drawSnake() {
   snake.forEach((segment) => {
     const snakeElement = createGameElement('div', 'snake');
-    setPosition(snakeElement, segment);
-
-    board.appendChild(snakeElement);
+    printPositionInBoard(snakeElement, segment);
   });
 }
 
 function drawFood() {
   const foodElement = createGameElement('div', 'food');
-  setPosition(foodElement, food);
-  board.appendChild(foodElement);
+  printPositionInBoard(foodElement, food);
+}
+
+function printPositionInBoard(element, position) {
+  element.style.gridColumn = position.x;
+  element.style.gridRow = position.y;
+  board.appendChild(element);
 }
 
 function createGameElement(tag, className) {
   const ele = document.createElement(tag);
   ele.className = className;
-
   return ele;
 }
 
-function setPosition(element, position) {
-  element.style.gridColumn = position.x;
-  element.style.gridRow = position.y;
-}
-
 function generateFood() {
-  const x = Math.floor(Math.random() * gridSize) * 1;
-  const y = Math.floor(Math.random() * gridSize) * 1;
+  const x = Math.floor(Math.random() * gridSize) + 1;
+  const y = Math.floor(Math.random() * gridSize) + 1;
   return { x, y };
 }
 
 function move() {
   const head = { ...snake[0] };
-
   switch (direction) {
     case 'right':
       head.x++;
@@ -75,7 +77,7 @@ function move() {
 
   snake.unshift(head);
   if (head.x === food.x && head.y === food.y) {
-    audioElement.play();
+    audioSuccess.play();
     food = generateFood();
     clearInterval(gameInterval);
 
@@ -92,9 +94,11 @@ function move() {
   }
 }
 
+// game statuses
 function startGame() {
   gameStarted = true;
   splashScreen.style.display = 'none';
+  pausedSplashScreen.style.display = 'none';
   audioSong.play();
 
   gameInterval = setInterval(() => {
@@ -104,16 +108,24 @@ function startGame() {
   }, gameSpeedDealy);
 }
 
+function pauseOrRestartGame() {
+  if (gameInterval) {
+    pausedSplashScreen.style.display = 'flex';
+    audioSong.pause();
+    gameInterval = clearInterval(gameInterval);
+  } else {
+    startGame();
+  }
+}
+
 function resetGame() {
   location.reload();
 }
 
+// key handlers
 function handleKeyPress(event) {
-  if (
-    (!gameStarted && event.code === 'space') ||
-    (!gameStarted && event.key === ' ')
-  ) {
-    startGame();
+  if (event.code === 'space' || event.key === ' ') {
+    gameStarted ? pauseOrRestartGame() : startGame();
   } else {
     switch (event.key) {
       case 'ArrowUp':
@@ -135,6 +147,7 @@ function handleKeyPress(event) {
   }
 }
 
+// check and setters
 function checkCollision() {
   const head = snake[0];
 
