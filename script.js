@@ -1,25 +1,39 @@
+// create audio elements
 const audioSuccess = new Audio('success_sound.mp3');
 const audioSong = new Audio('8_bit_song.mp3');
-audioSong.volume = 0.3;
-audioSong.loop = true;
 
+// get html elements
 const board = document.getElementById('game-board');
 const scoreText = document.getElementById('score');
-
 const splashScreen = document.getElementById('splash-screen');
 const pausedSplashScreen = document.getElementById('pause-splash-screen');
 
-pausedSplashScreen.style.display = 'none';
+// const
+const GRID_SIZE = 20;
 
-const gridSize = 20;
-
-let snake = [{ x: 10, y: 10 }];
-let food = generateFood();
-let direction = 'right';
+// vars
+let snake;
+let food;
+let direction;
 let gameInterval;
-let gameSpeedDealy = 210;
-let gameStarted = false;
-let score = 0;
+let gameSpeedDealy;
+let gameStatus; // new / started / paused / over
+let score;
+
+function init() {
+  document.addEventListener('keydown', handleKeyPress);
+
+  pausedSplashScreen.style.display = 'none';
+  audioSong.volume = 0.3;
+  audioSong.loop = true;
+
+  snake = [{ x: 10, y: 10 }];
+  food = generateFood();
+  direction = 'right';
+  gameStatus = 'new';
+  score = 0;
+  gameSpeedDealy = 210;
+}
 
 // create & draw HTML elements
 function draw() {
@@ -53,8 +67,8 @@ function createGameElement(tag, className) {
 }
 
 function generateFood() {
-  const x = Math.floor(Math.random() * gridSize) + 1;
-  const y = Math.floor(Math.random() * gridSize) + 1;
+  const x = Math.floor(Math.random() * GRID_SIZE) + 1;
+  const y = Math.floor(Math.random() * GRID_SIZE) + 1;
   return { x, y };
 }
 
@@ -96,7 +110,7 @@ function move() {
 
 // game statuses
 function startGame() {
-  gameStarted = true;
+  //gameStarted = true;
   splashScreen.style.display = 'none';
   pausedSplashScreen.style.display = 'none';
   audioSong.play();
@@ -108,14 +122,16 @@ function startGame() {
   }, gameSpeedDealy);
 }
 
-function pauseOrRestartGame() {
-  if (gameInterval) {
-    pausedSplashScreen.style.display = 'flex';
-    audioSong.pause();
-    gameInterval = clearInterval(gameInterval);
-  } else {
-    startGame();
-  }
+function pauseGame() {
+  gameInterval = clearInterval(gameInterval);
+  pausedSplashScreen.style.display = 'flex';
+  audioSong.pause();
+}
+
+function gameOver() {
+  clearInterval(gameInterval);
+  audioSong.pause();
+  gameStatus = 'over';
 }
 
 function resetGame() {
@@ -124,26 +140,45 @@ function resetGame() {
 
 // key handlers
 function handleKeyPress(event) {
-  if (event.code === 'space' || event.key === ' ') {
-    gameStarted ? pauseOrRestartGame() : startGame();
-  } else {
-    switch (event.key) {
-      case 'ArrowUp':
-        if (direction !== 'down') direction = 'up';
-        break;
-      case 'ArrowDown':
-        if (direction !== 'up') direction = 'down';
-        break;
-      case 'ArrowRight':
-        if (direction !== 'left') direction = 'right';
-        break;
-      case 'ArrowLeft':
-        if (direction !== 'right') direction = 'left';
-        break;
+  if (event.code === 'space' || event.key === ' ') onPressSpace();
+  onPressArrow();
+}
 
-      default:
-        break;
-    }
+function onPressSpace() {
+  switch (gameStatus) {
+    case 'new':
+      gameStatus = 'started';
+      startGame();
+      break;
+    case 'started':
+      gameStatus = 'paused';
+      pauseGame();
+      break;
+    case 'paused':
+      gameStatus = 'started';
+      startGame();
+      break;
+    case 'over':
+      resetGame();
+      gameStatus = 'new';
+      break;
+  }
+}
+
+function onPressArrow() {
+  switch (event.key) {
+    case 'ArrowUp':
+      if (direction !== 'down') direction = 'up';
+      break;
+    case 'ArrowDown':
+      if (direction !== 'up') direction = 'down';
+      break;
+    case 'ArrowRight':
+      if (direction !== 'left') direction = 'right';
+      break;
+    case 'ArrowLeft':
+      if (direction !== 'right') direction = 'left';
+      break;
   }
 }
 
@@ -151,13 +186,13 @@ function handleKeyPress(event) {
 function checkCollision() {
   const head = snake[0];
 
-  if (head.x < 1 || head.x > gridSize || head.y < 1 || head.y > gridSize) {
-    resetGame();
+  if (head.x < 1 || head.x > GRID_SIZE || head.y < 1 || head.y > GRID_SIZE) {
+    gameOver();
   }
 
   for (let i = 1; i < snake.length; i++) {
     if (head.x === snake[i].x && head.y === snake[i].y) {
-      resetGame();
+      gameOver();
     }
   }
 }
@@ -176,4 +211,4 @@ function setScore() {
   scoreText.innerHTML = score;
 }
 
-document.addEventListener('keydown', handleKeyPress);
+init();

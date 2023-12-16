@@ -23,9 +23,9 @@ body {
 }
 .snake:first-of-type {
   background-color: #333;
-
   border-radius: 2px;
   border: 3px solid #4f610e;
+  z-index: 9;
 }
 
 #game-board {
